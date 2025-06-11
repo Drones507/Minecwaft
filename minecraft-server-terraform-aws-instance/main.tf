@@ -43,21 +43,13 @@ resource "aws_default_subnet" "default" {
   availability_zone = data.aws_availability_zones.available.names[0]
 }
 
-# EC2 Instance with Minecraft Docker server
+# EC2 Instance (no user_data)
 resource "aws_instance" "minecraft" {
-  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2 (us-east-1)
+  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2
   instance_type          = "t2.micro"
   subnet_id              = aws_default_subnet.default.id
   vpc_security_group_ids = [aws_security_group.minecraft_sg.id]
-
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras install docker -y
-              service docker start
-              usermod -a -G docker ec2-user
-              docker run -d -p 25565:25565 -e EULA=TRUE -e MEMORY=1G --restart unless-stopped itzg/minecraft-server
-              EOF
+  key_name = "CourseProject2"
 
   tags = {
     Name = "MinecraftEC2"

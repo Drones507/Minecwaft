@@ -9,7 +9,7 @@ Course Project 2
 
 This repository contains infrastructure provisioning scripts using Terraform to automate the deployment of a Minecraft server on AWS EC2. Due to IAM limitations in the AWS Learner Lab, ECS was not feasible, so this project uses a Dockerized Minecraft server on a provisioned EC2 instance.
 
-All resources are created and configured entirely through code — no AWS Console, no SSH, and no manual setup.
+All resources are created and configured entirely through code — no AWS Console, no manual SSH, and no manual server setup.
 
 ## Requirements
 
@@ -32,7 +32,7 @@ You will need:
 - AWS_SESSION_TOKEN (for temporary credentials)
 - AWS_DEFAULT_REGION (must be set to us-east-1)
 
-Set them in your shell or using a .env file.
+Set them in your shell or using GitHub Secrets.
 
 ## Setup Instructions
 
@@ -43,7 +43,7 @@ git clone https://github.com/yourusername/Minecwaft.git
 cd Minecwaft
 ```
 
-### 2. Configure AWS CLI
+### 2. Configure AWS CLI (if running locally)
 
 ```bash
 export AWS_ACCESS_KEY_ID=...
@@ -51,6 +51,8 @@ export AWS_SECRET_ACCESS_KEY=...
 export AWS_SESSION_TOKEN=...
 export AWS_DEFAULT_REGION=us-east-1
 ```
+
+Or store these in GitHub repository secrets before running GitHub Actions.
 
 ### 3. Initialize Terraform
 
@@ -68,43 +70,47 @@ Terraform will:
 - Launch an EC2 instance
 - Assign a security group with port 25565 open
 - Attach an Elastic IP
-- Install Docker via user_data
-- Start the Minecraft server container
+- Output the public IP for GitHub Actions to connect
+- Let GitHub Actions install Docker and start the Minecraft server via SSH
 
-### 5. Connect via Minecraft
+## How to Connect
 
-1. Open Minecraft
-2. Multiplayer → Add Server
-3. Use the Elastic IP output by Terraform
-4. Port: 25565
+### Verify Port is Open
 
-You can also verify availability with:
 ```bash
 nmap -sV -Pn -p T:25565 <public-ip>
 ```
+
+### Connect from Minecraft
+
+1. Open Minecraft
+2. Multiplayer → Add Server
+3. Enter your public IP and port 25565
+4. Click Join Server
 
 ## Project Structure
 
 ```bash
 Minecwaft/
 └── minecraft-server-terraform-aws-instance/
-    ├── .terraform/
-    ├── main.tf
-    ├── outputs.tf
-    ├── terraform.tfstate
-    ├── terraform.tfstate.backup
-    ├── .terraform.lock.hcl
-    └── README.md
+    ├── .terraform/                   # Terraform plugin/cache files
+    ├── main.tf                       # Terraform config to provision EC2 and networking
+    ├── outputs.tf                    # Outputs public IP for Minecraft connection
+    ├── terraform.tfstate             # Current state of provisioned infrastructure
+    ├── terraform.tfstate.backup      # Backup state
+    ├── .terraform.lock.hcl           # Dependency lockfile
+    └── README.md                     # Project overview and usage instructions
 ```
 
 ## High-Level Flow
 
 ```text
-1. GitHub Repo → Terraform
-2. Terraform → AWS EC2 + Security Group + Elastic IP
-3. EC2 boots → user_data installs Docker
-4. Docker starts Minecraft container
-5. Port 25565 exposed → You connect via Minecraft
+1. GitHub Repo → GitHub Actions
+2. Terraform provisions AWS EC2 + Security Group + Elastic IP
+3. EC2 boots → IP is extracted from Terraform output
+4. GitHub Actions SSHes in → Installs Docker
+5. Minecraft server container starts
+6. Port 25565 exposed → You connect via Minecraft
 ```
 
 ## Helpful Links
@@ -112,3 +118,14 @@ Minecwaft/
 - https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 - https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-build
 - https://hub.docker.com/r/itzg/minecraft-server
+
+## GitHub Actions: Docker Build Automation
+
+This project includes a `.github/workflows/main.yml` pipeline that:
+
+- Automatically provisions AWS EC2 and networking on every push to `main`
+- SSHes into the EC2 instance using a GitHub secret key
+- Installs Docker and runs the Minecraft container
+- Does not push any images to Docker Hub (for privacy and grading compliance)
+
+The `Dockerfile` (if used) pulls the official Minecraft server JAR (version 1.20.1) directly from Mojang and sets `eula=true` automatically.
