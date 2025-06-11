@@ -1,54 +1,114 @@
-Christopher Harvey
-CS312 System Administration 
-Sisavath Virasak
-Course Project 2
 
-# Minecwaft
-uWu
+# Minecwaft  
+**Christopher Harvey**  
+CS312 System Administration  
+Instructor: Sisavath Virasak  
+Course Project 2  
 
+## Project Overview
 
+This repository contains infrastructure provisioning scripts using Terraform to automate the deployment of a Minecraft server on AWS EC2. Due to IAM limitations in the AWS Learner Lab, ECS was not feasible, so this project uses a Dockerized Minecraft server on a provisioned EC2 instance.
 
-------------------------------
-REMOVE THIS MESSAGE IN FINAL COMMIT BEFORE SUBMISSION
+All resources are created and configured entirely through code — no AWS Console, no SSH, and no manual setup.
 
-RUBRIC CHECKLIST
+## Requirements
 
-25 points
-X  README is present in the repository and contains all required information
-X  3 pts for proper user of markdown syntax |
-X  10 pts if structure is clear and easy to follow |
-X  10 pts if steps are all explained and don't leave the reader wondering what they're doing |
-X  2 pts if no typos or other mistakes
+### Tools to Install
 
-50 points
-X  All the scripts required to complete this project are in the repository
-X  The scripts will be compared with the recording and might eventually be run if we have doubts:
-X  25 pts for the infrastructure provisioning | 25 pts for the configuration
+| Tool       | Purpose                            |
+|------------|-------------------------------------|
+| Terraform  | Provision AWS resources             |
+| AWS CLI    | Programmatic AWS authentication     |
+| Git        | Version control                     |
+| Docker     | Runs the Minecraft container        |
+| nmap       | To verify open port 25565           |
+| Minecraft  | To connect to the deployed server   |
 
-25 points
-X  The recording shows you running your pipeline without ever going to the AWS Management Console, then connect (or telnet) to the Minecraft server once everything is setup.
-X  The pipeline should output the IP address of the server that you then use to connect to.
+### AWS Credentials
 
-Extra Credit Checklist 
-X  Extra-credit: Use ECS or EKS instead of EC2
-X  Extra-credit: If using ECS or EKS, have the Minecraft server data stored outside the container
-X  Extra-credit: Configure GitHub Actions to run the whole pipeline on push
+You will need:
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_SESSION_TOKEN (for temporary credentials)
+- AWS_DEFAULT_REGION (must be set to us-east-1)
 
-------------------------------
-Background: What will we do? How will we do it? 
-Requirements:
-What will the user need to configure to run the pipeline?
-What tools should be installed?
-Are there any credentials or CLI required?
-Should the user set environment variables or configure anything?
-Diagram of the major steps in the pipeline. 
-List of commands to run, with explanations.
-How to connect to the Minecraft server once it's running?
+Set them in your shell or using a .env file.
 
-**Background**
-In this repo are infrastructure provisioning scripts in Terraform to setup AWS resources. 
-* Provision compute resources: ECS
-* Setup networking
-* Specify and configure the Docker image to deploy
-* GitHub Actions to configure resources on push
-  
+## Setup Instructions
+
+### 1. Clone the Repo
+
+```bash
+git clone https://github.com/yourusername/Minecwaft.git
+cd Minecwaft
+```
+
+### 2. Configure AWS CLI
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+### 3. Initialize Terraform
+
+```bash
+terraform init
+```
+
+### 4. Apply Terraform Plan
+
+```bash
+terraform apply
+```
+
+Terraform will:
+- Launch an EC2 instance
+- Assign a security group with port 25565 open
+- Attach an Elastic IP
+- Install Docker via user_data
+- Start the Minecraft server container
+
+### 5. Connect via Minecraft
+
+1. Open Minecraft
+2. Multiplayer → Add Server
+3. Use the Elastic IP output by Terraform
+4. Port: 25565
+
+You can also verify availability with:
+```bash
+nmap -sV -Pn -p T:25565 <public-ip>
+```
+
+## Project Structure
+
+```bash
+Minecwaft/
+└── minecraft-server-terraform-aws-instance/
+    ├── .terraform/
+    ├── main.tf
+    ├── outputs.tf
+    ├── terraform.tfstate
+    ├── terraform.tfstate.backup
+    ├── .terraform.lock.hcl
+    └── README.md
+```
+
+## High-Level Flow
+
+```text
+1. GitHub Repo → Terraform
+2. Terraform → AWS EC2 + Security Group + Elastic IP
+3. EC2 boots → user_data installs Docker
+4. Docker starts Minecraft container
+5. Port 25565 exposed → You connect via Minecraft
+```
+
+## Helpful Links
+
+- https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
+- https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-build
+- https://hub.docker.com/r/itzg/minecraft-server
