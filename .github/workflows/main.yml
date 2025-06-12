@@ -34,10 +34,8 @@ jobs:
       - name: Get EC2 Public IP
         id: ec2ip
         run: |
-          IP=$(terraform -chdir=minecraft-server-terraform-aws-instance output -raw minecraft_eip)
-          echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
-          echo "::set-output name=ip::$IP"
-
+          IP=$(terraform -chdir=minecraft-server-terraform-aws-instance output -raw minecraft_server_ip)
+      
       - name: Write SSH key to file
         run: |
           echo "${{ secrets.AWS_SSH_KEY }}" > key.pem

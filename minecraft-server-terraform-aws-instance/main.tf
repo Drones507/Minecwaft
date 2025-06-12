@@ -73,9 +73,3 @@ resource "aws_instance" "minecraft" {
     Name = "MinecraftEC2"
   }
 }
-
-# Create Elastic IP
-resource "aws_eip" "minecraft_eip" {
-  instance = aws_instance.minecraft.id
-  vpc      = true
-}
