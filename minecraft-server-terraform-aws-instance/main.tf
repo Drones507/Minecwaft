@@ -14,16 +14,23 @@ provider "aws" {
 }
 
 resource "random_id" "suffix" {
-  byte_length = 4
+  byte_length = 2
+}
+
+resource "aws_default_vpc" "default" {}
+
+data "aws_availability_zones" "available" {}
+
+resource "aws_default_subnet" "default" {
+  availability_zone = data.aws_availability_zones.available.names[0]
 }
 
 resource "aws_security_group" "minecraft_sg" {
   name        = "minecraft-sg-${random_id.suffix.hex}"
-  description = "Allow Minecraft and SSH"
+  description = "Allow Minecraft and SSH access"
   vpc_id      = aws_default_vpc.default.id
 
   ingress {
-    description = "Allow Minecraft"
     from_port   = 25565
     to_port     = 25565
     protocol    = "tcp"
@@ -31,7 +38,6 @@ resource "aws_security_group" "minecraft_sg" {
   }
 
   ingress {
-    description = "Allow SSH from anywhere"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -44,32 +50,20 @@ resource "aws_security_group" "minecraft_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  tags = {
-    Name = "minecraft-sg-${random_id.suffix.hex}"
-  }
 }
 
-
-
-# Use default VPC
-data "aws_availability_zones" "available" {}
-
-resource "aws_default_vpc" "default" {}
-
-resource "aws_default_subnet" "default" {
-  availability_zone = data.aws_availability_zones.available.names[0]
-}
-
-# EC2 Instance (no user_data)
 resource "aws_instance" "minecraft" {
-  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2
+  ami                    = "ami-0c02fb55956c7d316"
   instance_type          = "t2.micro"
   subnet_id              = aws_default_subnet.default.id
   vpc_security_group_ids = [aws_security_group.minecraft_sg.id]
-  key_name = "CourseProject2"
+  key_name               = "CourseProject2"
 
   tags = {
     Name = "MinecraftEC2"
   }
+}
+
+output "minecraft_server_ip" {
+  value = aws_instance.minecraft.public_ip
 }
