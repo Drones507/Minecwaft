@@ -1,3 +1,3 @@
-output "minecraft_server_ip" {
+output "minecraft_eip" {
   value = aws_eip.minecraft_eip.public_ip
 }
