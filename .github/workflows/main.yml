@@ -27,25 +27,28 @@ jobs:
         run: terraform init
         working-directory: minecraft-server-terraform-aws-instance
 
-      - name: Apply Terraform (auto-approve)
+      - name: Apply Terraform
         run: terraform apply -auto-approve
         working-directory: minecraft-server-terraform-aws-instance
 
       - name: Get EC2 Public IP
+        id: getip
         run: |
           IP=$(terraform -chdir=minecraft-server-terraform-aws-instance output -raw minecraft_server_ip)
           echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
+          echo "::set-output name=ip::$IP"
 
       - name: Write SSH key to file
         run: |
           echo "${{ secrets.AWS_SSH_KEY }}" > key.pem
           chmod 600 key.pem
 
+      - name: Wait for EC2 to be ready
+        run: sleep 30
+
       - name: SSH into EC2 and start Minecraft
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
-            echo "Waiting 10s for instance readiness..."
-            sleep 10
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@$EC2_PUBLIC_IP << 'EOF'
             sudo amazon-linux-extras install docker -y || sudo yum install -y docker
             sudo systemctl start docker
             sudo docker run -d -p 25565:25565 -e EULA=TRUE --name minecraft itzg/minecraft-server
