@@ -13,9 +13,12 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Security Group for Minecraft
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 resource "aws_security_group" "minecraft_sg" {
-  name        = "minecraft-sg"
+  name        = "minecraft-sg-${random_id.suffix.hex}"
   description = "Allow Minecraft port"
   vpc_id      = aws_default_vpc.default.id
 
@@ -32,7 +35,12 @@ resource "aws_security_group" "minecraft_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "minecraft-sg-${random_id.suffix.hex}"
+  }
 }
+
 
 # Use default VPC
 data "aws_availability_zones" "available" {}
