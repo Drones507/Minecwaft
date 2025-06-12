@@ -53,7 +53,7 @@ resource "aws_security_group" "minecraft_sg" {
 }
 
 resource "aws_instance" "minecraft" {
-  ami                    = "ami-0c02fb55956c7d316"
+  ami                    = "ami-05f0fc85de381bd44"
   instance_type          = "t2.micro"
   subnet_id              = aws_default_subnet.default.id
   vpc_security_group_ids = [aws_security_group.minecraft_sg.id]
