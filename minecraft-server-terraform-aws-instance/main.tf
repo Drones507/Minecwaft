@@ -64,6 +64,3 @@ resource "aws_instance" "minecraft" {
   }
 }
 
-output "minecraft_server_ip" {
-  value = aws_instance.minecraft.public_ip
-}
