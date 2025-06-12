@@ -19,12 +19,21 @@ resource "random_id" "suffix" {
 
 resource "aws_security_group" "minecraft_sg" {
   name        = "minecraft-sg-${random_id.suffix.hex}"
-  description = "Allow Minecraft port"
+  description = "Allow Minecraft and SSH"
   vpc_id      = aws_default_vpc.default.id
 
   ingress {
+    description = "Allow Minecraft"
     from_port   = 25565
     to_port     = 25565
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow SSH from anywhere"
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -40,6 +49,7 @@ resource "aws_security_group" "minecraft_sg" {
     Name = "minecraft-sg-${random_id.suffix.hex}"
   }
 }
+
 
 
 # Use default VPC
