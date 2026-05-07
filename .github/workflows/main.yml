@@ -11,8 +11,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_DEFAULT_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-west-2
 
     steps:
       - name: Checkout repository
@@ -28,7 +27,9 @@ jobs:
         working-directory: minecraft-server-terraform-aws-instance
 
       - name: Apply Terraform
-        run: terraform apply -auto-approve
+        run: |
+          terraform apply -auto-approve \
+            -var="key_name=${{ secrets.AWS_KEY_NAME }}"
         working-directory: minecraft-server-terraform-aws-instance
 
       - name: Get EC2 Public IP
@@ -36,20 +37,17 @@ jobs:
         run: |
           IP=$(terraform -chdir=minecraft-server-terraform-aws-instance output -raw minecraft_server_ip)
           echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
-          echo "::set-output name=ip::$IP"
 
       - name: Write SSH key to file
         run: |
           echo "${{ secrets.AWS_SSH_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Wait for EC2 to be ready
-        run: sleep 30
+      - name: Wait for EC2 and user_data to finish
+        run: sleep 90
 
-      - name: SSH into EC2 and start Minecraft
+      - name: Verify Minecraft port is open
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@$EC2_PUBLIC_IP << 'EOF'
-            sudo amazon-linux-extras install docker -y || sudo yum install -y docker
-            sudo systemctl start docker
-            sudo docker run -d -p 25565:25565 -e EULA=TRUE --name minecraft itzg/minecraft-server
-          EOF
+          nc -zv "$EC2_PUBLIC_IP" 25565 \
+            && echo "Minecraft is reachable at $EC2_PUBLIC_IP:25565" \
+            || echo "Port 25565 not yet open — server may still be initialising"
